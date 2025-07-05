@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sketch to Render - Art AI</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 Sketch to Render</h1>
+            <p>Bạn Vẽ Nét - AI Đoán Hết !</p>
+        </div>
+
+        <div class="main-content">
+            <div class="drawing-section">
+                <div class="canvas-container">
+                    <canvas id="drawingCanvas" width="500" height="400"></canvas>
+                    <div class="canvas-size-info">Canvas: 500x400px</div>
+                </div>
+
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="brushSize">Kích thước:</label>
+                        <input type="range" id="brushSize" min="1" max="50" value="5">
+                        <span id="brushSizeValue">5px</span>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="brushColor">Màu sắc:</label>
+                        <input type="color" id="brushColor" value="#000000">
+                    </div>
+
+                    <button class="btn btn-secondary" id="clearCanvas">🗑️ Xóa</button>
+                    <button class="btn btn-secondary" id="undoBtn">↶ Undo</button>
+                </div>
+            </div>
+
+            <div class="results-section">
+                <div class="generate-section">
+                    <h3><span class="gemini-logo">🤖</span> S2R AI</h3>
+                    <button class="btn btn-primary" id="generateBtn">✨ Phân tích & Tạo render</button>
+                </div>
+
+                <div class="render-results">
+                    <h3>🖼️ Kết quả AI</h3>
+                    
+                    <div class="loading" id="loading">
+                        <div class="loading-spinner"></div>
+                        <p>S2R AI đang phân tích sketch của bạn...</p>
+                        <small>Đang tạo ảnh render từ sketch</small>
+                    </div>
+
+                    <div class="result-content" id="resultContent">
+                        <div class="result-grid">
+                            <div class="rendered-image-container">
+                                <h4>🎨 Ảnh render được tạo</h4>
+                                <div id="imageContainer">
+                                    <div class="image-placeholder">
+                                        Ảnh render sẽ được tạo từ sketch và hiển thị ở đây
+                                    </div>
+                                </div>
+                                <button class="download-btn" id="downloadBtn" style="display: none;">
+                                    📥 Tải ảnh xuống
+                                </button>
+                            </div>
+                            
+                            <div class="result-info">
+                                <div class="info-card">
+                                    <h4>📊 Điểm số phác họa</h4>
+                                    <div class="score-display" id="scoreDisplay">-/10</div>
+                                </div>
+                                
+                                <div class="info-card">
+                                    <h4>🔍 Nhận diện</h4>
+                                    <div class="prediction-text" id="predictionText">Chưa có kết quả</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="errorMessage" class="error-message" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
