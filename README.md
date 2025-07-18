@@ -46,7 +46,7 @@ Bạn Vẽ Nét - AI Đoán Hết!
 ### ✅ **Chạy trực tiếp**
 
 1. Clone hoặc tải repo.
-2. Mở file `script.js` sau đó thay thế `this.apiKey` bằng API key của bạn.
+2. Mở file `script.js` sau đó thay thế `this.apiKey` bằng API key của bạn hoặc Ctrl + F với 'api tai day' để tìm ra vị trí nhập API.
 3. Mở file `index.html` bằng trình duyệt (Chrome/Edge/Firefox).
 4. Vẽ → Bấm nút **Phân tích & Tạo render** → Xem kết quả.
 
