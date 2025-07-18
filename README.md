@@ -21,7 +21,7 @@ Bạn Vẽ Nét - AI Đoán Hết!
 | Frontend | HTML5, CSS3, Vanilla JavaScript |
 | Backend *(bổ sung nếu cần lưu trữ thông tin người dùng)* | Python 3, Flask |
 | AI Model | Gemini API (Google Generative Language) |
-| Image Generation | Pollinations API (Flux Model) |
+| Image Generation | Stability API (Stable Diffusion v1), Pollinations API (Flux Model) |
 
 ---
 
@@ -46,9 +46,11 @@ Bạn Vẽ Nét - AI Đoán Hết!
 ### ✅ **Chạy trực tiếp**
 
 1. Clone hoặc tải repo.
-2. Mở file `script.js` sau đó thay thế `this.apiKey` bằng API key của bạn hoặc Ctrl + F với 'api tai day' để tìm ra vị trí nhập API.
+2. Mở file `script.js` sau đó thay thế `this.apiKey` bằng API key của từ file `API_KEY.txt` hoặc Ctrl + F với 'api tai day' để tìm ra vị trí nhập API.
 3. Mở file `index.html` bằng trình duyệt (Chrome/Edge/Firefox).
 4. Vẽ → Bấm nút **Phân tích & Tạo render** → Xem kết quả.
+
+* Note: Lấy API Gemini từ: https://aistudio.google.com/apikey
 
 ## 🧑‍💻 **Cách tương tác với sản phẩm**
 
