@@ -211,39 +211,62 @@ MÔ TẢ: ["A cute [object] in line-art style, with soft pastel colors, minimali
         const description = (text.match(/MÔ TẢ[:\s]*([\s\S]*)/i)?.[1] || 'simple line drawing').trim();
         return { score, prediction, description };
     }
-  
-    async generateImageFromDescription(description) {
-        const enhancedPrompt = `${description}`;
-        const seed = Math.floor(Math.random() * 1e6);
 
-        const engineId = 'stable-diffusion-xl-1024-v1-0';
-        const url = `https://api.stability.ai/v1/generation/${engineId}/text-to-image`;
+    // Stability API
+    // async generateImageFromDescription(description) {
+    //     const enhancedPrompt = `${description}`;
+    //     const seed = Math.floor(Math.random() * 1e6);
+
+    //     const engineId = 'stable-diffusion-xl-1024-v1-0';
+    //     const url = `https://api.stability.ai/v1/generation/${engineId}/text-to-image`;
       
 
-        const STABILITY_API_KEY = ''; // api tai day
+    //     const STABILITY_API_KEY = ''; // api tai day
 
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${STABILITY_API_KEY}`
-            },
-            body: JSON.stringify({
-                text_prompts: [{ text: enhancedPrompt }],
-                cfg_scale: 7,
-                width: 1024,
-                height: 1024,
-                samples: 1,
-                steps: 30,
-                seed: seed
-            })
+    //     const response = await fetch(url, {
+    //         method: 'POST',
+    //         headers: {
+    //             'Content-Type': 'application/json',
+    //             'Accept': 'application/json',
+    //             'Authorization': `Bearer ${STABILITY_API_KEY}`
+    //         },
+    //         body: JSON.stringify({
+    //             text_prompts: [{ text: enhancedPrompt }],
+    //             cfg_scale: 7,
+    //             width: 1024,
+    //             height: 1024,
+    //             samples: 1,
+    //             steps: 30,
+    //             seed: seed
+    //         })
+    //     });
+
+    //     const data = await response.json();
+    //     const base64 = data.artifacts[0].base64;
+    //     return `data:image/png;base64,${base64}`;
+    // }
+
+
+    // Pollinations API
+    async generateImageFromDescription(description) {
+        // Using Pollinations AI (free image generation API)
+        // This creates an image based on the description from Gemini
+        const enhancedPrompt = `${description}, high quality, detailed artwork, colored pencil, cute illustration`;
+        const encodedPrompt = encodeURIComponent(enhancedPrompt);
+        
+        // Generate a unique seed to avoid caching
+        const seed = Math.floor(Math.random() * 1000000);
+        const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&width=512&height=512&model=flux`;
+        
+        // Verify the image loads
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(imageUrl);
+            img.onerror = () => reject(new Error('Không thể tạo ảnh render'));
+            img.src = imageUrl;
         });
-
-        const data = await response.json();
-        const base64 = data.artifacts[0].base64;
-        return `data:image/png;base64,${base64}`;
     }
+    
 
     displayResults(imageUrl, score, prediction) {
         const imageContainer = document.getElementById('imageContainer');
