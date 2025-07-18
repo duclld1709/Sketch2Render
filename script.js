@@ -6,10 +6,7 @@ class SketchToRenderApp {
         this.drawingHistory = [];
         this.currentPath = [];
         this.renderedImageUrl = null;
-        
-        // API Key được nhúng trực tiếp trong code
-        this.apiKey = ''; // Thay thế bằng API key thực tế
-        
+
         this.initializeCanvas();
         this.setupEventListeners();
         this.saveCanvasState();
@@ -23,13 +20,11 @@ class SketchToRenderApp {
     }
 
     setupEventListeners() {
-        // Canvas drawing events
         this.canvas.addEventListener('mousedown', (e) => this.startDrawing(e));
         this.canvas.addEventListener('mousemove', (e) => this.draw(e));
         this.canvas.addEventListener('mouseup', () => this.stopDrawing());
         this.canvas.addEventListener('mouseout', () => this.stopDrawing());
 
-        // Touch events for mobile
         this.canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
             const touch = e.touches[0];
@@ -56,26 +51,14 @@ class SketchToRenderApp {
             this.canvas.dispatchEvent(mouseEvent);
         });
 
-        // Control events
         document.getElementById('brushSize').addEventListener('input', (e) => {
             document.getElementById('brushSizeValue').textContent = e.target.value + 'px';
         });
 
-        document.getElementById('clearCanvas').addEventListener('click', () => {
-            this.clearCanvas();
-        });
-
-        document.getElementById('undoBtn').addEventListener('click', () => {
-            this.undo();
-        });
-
-        document.getElementById('generateBtn').addEventListener('click', () => {
-            this.generateRender();
-        });
-
-        document.getElementById('downloadBtn').addEventListener('click', () => {
-            this.downloadImage();
-        });
+        document.getElementById('clearCanvas').addEventListener('click', () => this.clearCanvas());
+        document.getElementById('undoBtn').addEventListener('click', () => this.undo());
+        document.getElementById('generateBtn').addEventListener('click', () => this.generateRender());
+        document.getElementById('downloadBtn').addEventListener('click', () => this.downloadImage());
     }
 
     getMousePos(e) {
@@ -90,10 +73,10 @@ class SketchToRenderApp {
         this.isDrawing = true;
         const pos = this.getMousePos(e);
         this.currentPath = [pos];
-        
+
         this.ctx.strokeStyle = document.getElementById('brushColor').value;
         this.ctx.lineWidth = document.getElementById('brushSize').value;
-        
+
         this.ctx.beginPath();
         this.ctx.moveTo(pos.x, pos.y);
     }
@@ -103,7 +86,7 @@ class SketchToRenderApp {
 
         const pos = this.getMousePos(e);
         this.currentPath.push(pos);
-        
+
         this.ctx.lineTo(pos.x, pos.y);
         this.ctx.stroke();
     }
@@ -143,44 +126,30 @@ class SketchToRenderApp {
     }
 
     async generateRender() {
-        if (!this.apiKey || this.apiKey === 'YOUR_GEMINI_API_KEY_HERE') {
-            this.showError('Vui lòng cấu hình API Key trong source code');
-            return;
-        }
+        if (!this.isCanvasEmpty()) {
+            this.showLoading(true);
+            this.hideError();
 
-        // Check if canvas is empty
-        if (this.isCanvasEmpty()) {
+            try {
+                const analysisResult = await this.analyzeSketchWithGemini();
+                const imageUrl = await this.generateImageFromDescription(analysisResult.description);
+                this.displayResults(imageUrl, analysisResult.score, analysisResult.prediction);
+            } catch (error) {
+                console.error(error);
+                this.showError(`Lỗi: ${error.message}`);
+            } finally {
+                this.showLoading(false);
+            }
+        } else {
             this.showError('Vui lòng vẽ gì đó trước khi tạo render');
-            return;
-        }
-
-        this.showLoading(true);
-        this.hideError();
-
-        try {
-            // Step 1: Analyze sketch with Gemini
-            const analysisResult = await this.analyzeSketchWithGemini();
-            console.log('Analysis result:', analysisResult);
-            
-            // Step 2: Generate image using the description from Gemini
-            const imageUrl = await this.generateImageFromDescription(analysisResult.description);
-            
-            // Step 3: Display results
-            this.displayResults(imageUrl, analysisResult.score, analysisResult.prediction);
-
-        } catch (error) {
-            console.error('Error:', error);
-            this.showError(`Lỗi: ${error.message}`);
-        } finally {
-            this.showLoading(false);
         }
     }
 
     isCanvasEmpty() {
         const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
         return imageData.data.every((pixel, index) => {
-            if ((index + 1) % 4 === 0) return true; // Alpha channel
-            return pixel === 255; // White pixels
+            if ((index + 1) % 4 === 0) return true;
+            return pixel === 255;
         });
     }
 
@@ -188,18 +157,30 @@ class SketchToRenderApp {
         const canvasDataURL = this.canvas.toDataURL('image/png');
         const base64Data = canvasDataURL.split(',')[1];
 
-        const prompt = `Phân tích bức vẽ sketch này và cung cấp:
+        const prompt = `Hãy phân tích bức vẽ sketch sau và cung cấp:
 
-1. ĐIỂM SỐ: Đánh giá chất lượng và độ rõ ràng từ 1–10, với tiêu chuẩn thoải mái (hình được vẽ bởi người bình thường bằng bút đen trên canvas, không yêu cầu đường nét hoàn hảo).
-2. DỰ ĐOÁN: Tên ngắn gọn của sự vật được vẽ (VD: "Mèo", "Ngôi nhà", "Hoa")  
-3. MÔ TẢ: Mô tả ngắn gọn để tạo ảnh render (viết bằng tiếng Anh, phong cách artistic)
+1. ĐIỂM SỐ: Đánh giá chất lượng và độ rõ ràng của sketch theo thang 1–10 (vẽ bằng bút đen, phong cách đơn giản, không yêu cầu đường nét hoàn hảo)
 
-Định dạng trả lời:
-ĐIỂM: [số]
-DỰ ĐOÁN: [tên sự vật]
-MÔ TẢ: [mô tả ngắn gọn bằng tiếng Anh]`;
+2. DỰ ĐOÁN: Tên ngắn gọn của vật thể được vẽ (ví dụ: "Mèo", "Ngôi nhà", "Hoa")
 
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`, {
+3. MÔ TẢ: Viết mô tả ngắn gọn bằng tiếng Anh, mô tả nội dung sketch dùng cho AI vẽ lại. Bao gồm:
+
+      - Miêu tả đối tượng
+
+      - Phong cách: cute, line-art style, soft pastel colors, minimalist illustration
+
+      - Tránh chi tiết phức tạp, ưu tiên phong cách đơn giản, đáng yêu
+
+Định dạng phản hồi:
+
+ĐIỂM: [1–10]
+
+DỰ ĐOÁN: [Tên đối tượng]
+
+MÔ TẢ: ["A cute [object] in line-art style, with soft pastel colors, minimalist illustration..."]`;
+
+        const geminiApiKey = 'AIzaSyCinF1_Z7XXPzu_zvMzifKyPIy7i7eUBGc'; // dùng key bạn dán sẵn
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -219,82 +200,58 @@ MÔ TẢ: [mô tả ngắn gọn bằng tiếng Anh]`;
             })
         });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(`Gemini API Error: ${errorData.error?.message || 'Unknown error'}`);
-        }
-
         const data = await response.json();
-        
-        if (data.candidates && data.candidates.length > 0) {
-            const result = data.candidates[0].content.parts[0].text;
-            return this.parseGeminiResponse(result);
-        } else {
-            throw new Error('Không có kết quả từ Gemini API');
-        }
+        const text = data.candidates[0].content.parts[0].text;
+        return this.parseGeminiResponse(text);
     }
 
     parseGeminiResponse(text) {
-        console.log('Gemini response:', text);
-        
-        // Extract score
-        const scoreMatch = text.match(/ĐIỂM[:\s]*(\d+)/i) || text.match(/score[:\s]*(\d+)/i);
-        const score = scoreMatch ? parseInt(scoreMatch[1]) : 7;
-
-        // Extract prediction  
-        const predictionMatch = text.match(/DỰ ĐOÁN[:\s]*([^\n]+)/i) || text.match(/prediction[:\s]*([^\n]+)/i);
-        const prediction = predictionMatch ? predictionMatch[1].trim() : 'Không xác định';
-
-        // Extract description
-        const descriptionMatch = text.match(/MÔ TẢ[:\s]*([^]*)/i) || text.match(/description[:\s]*([^]*)/i);
-        let description = descriptionMatch ? descriptionMatch[1].trim() : text;
-        
-        // If no specific description found, use the whole response
-        if (!descriptionMatch) {
-            // Try to extract the most descriptive part
-            const lines = text.split('\n').filter(line => line.trim().length > 20);
-            description = lines.length > 0 ? lines[lines.length - 1] : text;
-        }
-
-        return {
-            score: Math.min(Math.max(score, 1), 10), // Ensure score is between 1-10
-            prediction: prediction.replace(/^["']|["']$/g, ''), // Remove quotes
-            description: description.replace(/^["']|["']$/g, '') // Remove quotes
-        };
+        const score = parseInt(text.match(/ĐIỂM[:\s]*(\d+)/i)?.[1] || 7);
+        const prediction = (text.match(/DỰ ĐOÁN[:\s]*(.*)/i)?.[1] || 'Không xác định').trim();
+        const description = (text.match(/MÔ TẢ[:\s]*([\s\S]*)/i)?.[1] || 'simple line drawing').trim();
+        return { score, prediction, description };
     }
-
+  
     async generateImageFromDescription(description) {
-        // Using Pollinations AI (free image generation API)
-        // This creates an image based on the description from Gemini
-        const enhancedPrompt = `${description}, high quality, detailed artwork, professional illustration`;
-        const encodedPrompt = encodeURIComponent(enhancedPrompt);
-        
-        // Generate a unique seed to avoid caching
-        const seed = Math.floor(Math.random() * 1000000);
-        const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&width=512&height=512&model=flux`;
-        
-        // Verify the image loads
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = () => resolve(imageUrl);
-            img.onerror = () => reject(new Error('Không thể tạo ảnh render'));
-            img.src = imageUrl;
+        const enhancedPrompt = `${description}`;
+        const seed = Math.floor(Math.random() * 1e6);
+
+        const engineId = 'stable-diffusion-xl-1024-v1-0';
+        const url = `https://api.stability.ai/v1/generation/${engineId}/text-to-image`;
+      
+
+        const STABILITY_API_KEY = 'sk-JzOAcde6bqHRjfInzdrNmNjjrCs0LFAvB838xi14OhhEQ06T '; // Dán key của bạn
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${STABILITY_API_KEY}`
+            },
+            body: JSON.stringify({
+                text_prompts: [{ text: enhancedPrompt }],
+                cfg_scale: 7,
+                width: 1024,
+                height: 1024,
+                samples: 1,
+                steps: 30,
+                seed: seed
+            })
         });
+
+        const data = await response.json();
+        const base64 = data.artifacts[0].base64;
+        return `data:image/png;base64,${base64}`;
     }
 
     displayResults(imageUrl, score, prediction) {
-        // Display rendered image
         const imageContainer = document.getElementById('imageContainer');
         imageContainer.innerHTML = `<img src="${imageUrl}" alt="Rendered Image" class="rendered-image">`;
-        
         this.renderedImageUrl = imageUrl;
         document.getElementById('downloadBtn').style.display = 'block';
-        
-        // Display results
         document.getElementById('scoreDisplay').textContent = `${score}/10`;
         document.getElementById('predictionText').textContent = prediction;
-
-        // Show results
         document.getElementById('resultContent').style.display = 'block';
     }
 
@@ -323,7 +280,7 @@ MÔ TẢ: [mô tả ngắn gọn bằng tiếng Anh]`;
     }
 }
 
-// Initialize the app when the page loads
+// Khởi tạo khi DOM sẵn sàng
 document.addEventListener('DOMContentLoaded', () => {
     new SketchToRenderApp();
 });
